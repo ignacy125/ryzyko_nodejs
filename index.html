@@ -76,7 +76,7 @@
 <div class="highlight" id="first_area_highlight"></div>
 
 
-<img id="map" src="http://localhost:8084/map-with-names.jpg" border="0" width="1920" height="1080" orgWidth="1920" orgHeight="1080" usemap="#gameMap" alt="" />
+<img id="map" src="http://localhost:8080/map-with-names.jpg" border="0" width="1920" height="1080" orgWidth="1920" orgHeight="1080" usemap="#gameMap" alt="" />
 <map name="gameMap" id="gamingMap">
     <area  alt="" title="" href="North_west.html" shape="rect" coords="168,132,322,187" target="_self"   id="North_West" data-maphilight='{"strokeColor":"0000ff","strokeWidth":5,"fillColor":"ff0000","fillOpacity":0.6}' title="Metadata'd up a bit" />
     <area  alt="" title="" href="alaska.html" shape="rect" coords="20,113,136,215"  target="_self" id="Alaska"/>
@@ -130,14 +130,15 @@
     $(document).ready(function() {
 
         var a = 0;
-        var port = "8084";
+        var port = "8080";
+        var timeStamp = Math.floor(Math.random() * 5000);
 
 
         $('area').click(function(e) {
             e.preventDefault();
         });
 
-        $.getJSON('http://localhost:'+port+'/users.json', {
+        $.getJSON('http://localhost:'+port+'/users.json?time='+timeStamp, {
             format: "json",
             async: "false"
 
@@ -187,6 +188,7 @@
         }).done(function(dataCountries) {
 
 
+            //unit_key = dataCountries["continents"][continent][country]["units"];
             alaska_units = dataCountries["continents"]["North_america"]["Alaska"]["units"]; //Bez var, żeby zmienna w funckji stała się globalna
             northWest_units = dataCountries["continents"]["North_america"]["North_west"]["units"];
 
@@ -211,12 +213,12 @@
 
 
 
-        function checkUserUnits() {
+        function checkUserUnits(country_id) {
 
-            socket = io("http://localhost:8083");
-            console.log('test');
-            socket.emit('testowy_event', JSON.stringify(user1_units_to_deploy), function(data){
-                console.log('Użytkownik 1 posiada ', data + ' jednostek do rozmieszczenia (wysłano na serwer)');
+            socket = io("http://localhost:8084");
+            console.log('test country id: ' + country_id);
+            socket.emit('send_deployed_units_amount', JSON.stringify(country_id), function(data){
+                console.log('id kraju wybranego ', data + ' (wysłano na serwer)');
             });
 
 
@@ -273,6 +275,7 @@
             } else  {
 
                 $('#list_owned_countries').css('display', 'block');
+
                 switch ( chosenCountry ) {
                     case 'Alaska':
                     case '1':
@@ -292,10 +295,12 @@
                         console.log("Pozostało jednostek do rozmieszczenia: " + user1_units_to_deploy);
                         console.log("Rozmieszczono jednostkę w Alaska");
                         console.log("Liczba jednostek w Alasce: " + alaska_units);
+                        return chosenCountry;
                         return $('#list_owned_countries').append('<li> Alaska </li>' + alaska_units);
                         break;
                     case 'North West':
                     case '2':
+
                         //countryKeyUnits += 1;
                         user1_units_to_deploy--;
                         northWest_units++;
@@ -308,7 +313,11 @@
                         console.log("Pozostało jednostek do rozmieszczenia: " + user1_units_to_deploy);
                         console.log("Rozmieszczono jednostkę w Północno-zachodnia Ameryka");
                         console.log("Liczba jednostek w Północno-zachodniej Ameryce: " + northWest_units);
+                        return chosenCountry;
                         return $('#list_owned_countries').append('<li> North West: </li>' + '<span>' + northWest_units + '</span>');
+                        break;
+                    default:
+                        return chosenCountry;
                         break;
 
                 }
@@ -416,7 +425,8 @@
          });
          */
         $('#deployBtn2').click(function() {
-            getCountryInfo();
+            country_id = getCountryInfo();
+            checkUserUnits(country_id);
         });
 
         $('#deployBtn').click(function() {
